@@ -4,7 +4,6 @@ import settings
 from gameObject import GameObj
 pygame.mixer.init()
 
-
 WIN = pygame.display.set_mode((settings.WIDTH, settings.HEIGHT))
 pygame.display.set_caption("First Game")
 
@@ -28,24 +27,62 @@ YELLOW_HIT = pygame.USEREVENT + 1
 RED_HIT = pygame.USEREVENT + 2
 
 
+def image_scale(image, scale):
+    if scale > 1:
+        return pygame.transform.scale(image, (image.get_width() * scale, image.get_height() * scale))
+    else:
+        return image
+
+
+def rect_scale(rect, scale):
+    if scale > 1:
+        x = rect.x * scale
+        y = rect.y * scale
+        width = rect.width * scale
+        height = rect.height * scale
+        return pygame.Rect(x, y, width, height)
+    else:
+        return rect
+
+
 def draw_window(red, yellow, bullets, red_health, yellow_health):
-    WIN.blit(SPACE, (0, 0))
-    pygame.draw.rect(WIN, settings.BLACK, BORDER)
+    # draw the background and border
+    WIN.blit(image_scale(SPACE, settings.SCALE), (0, 0))
+    pygame.draw.rect(WIN, settings.BLACK, rect_scale(BORDER, settings.SCALE))
 
-    WIN.blit(red.get_image(), (red.get_x(), red.get_y()))
+    # spaceships
+    WIN.blit(image_scale(red.get_image(), settings.SCALE),
+             (red.get_x() * settings.SCALE, red.get_y() * settings.SCALE)
+             )
 
-    WIN.blit(yellow.get_image(), (yellow.get_x(), yellow.get_y()))
+    WIN.blit(image_scale(yellow.get_image(), settings.SCALE),
+             (yellow.get_x() * settings.SCALE, yellow.get_y() * settings.SCALE)
+             )
+
+    # any bullets
     for bullet in bullets:
-        pygame.draw.rect(WIN, settings.WHITE, bullet)
+        pygame.draw.rect(WIN, settings.WHITE,
+                         rect_scale(bullet, settings.SCALE)
+                         )
+
+    # text
     red_health_text = settings.HEALTH_FONT.render(
         "Health: " + str(red_health), 1, settings.WHITE)
     yellow_health_text = settings.HEALTH_FONT.render(
         "Health: " + str(yellow_health), 1, settings.WHITE)
-    WIN.blit(red_health_text, (settings.WIDTH - red_health_text.get_width() -
-                               10, settings.HEIGHT - red_health_text.get_height() - 10))
-    WIN.blit(yellow_health_text, (10, settings.HEIGHT -
+    WIN.blit(red_health_text, (WIN.get_width() - red_health_text.get_width() -
+                               10, WIN.get_height() - red_health_text.get_height() - 10))
+    WIN.blit(yellow_health_text, (10, WIN.get_height() -
                                   yellow_health_text.get_height() - 10))
     pygame.display.update()
+
+
+def draw_winner(text):
+    text = settings.WINNER_FONT.render(text, 1, settings.WHITE)
+    WIN.blit(text, (WIN.get_width() // 2 - text.get_width() //
+                    2, WIN.get_height() // 2 - text.get_height() // 2))
+    pygame.display.update()
+    pygame.time.delay(5000)
 
 
 def handle_bullets(yellow_bullets, red_bullets, yellow, red):
@@ -66,28 +103,6 @@ def handle_bullets(yellow_bullets, red_bullets, yellow, red):
             yellow_bullets.remove(bullet)
 
 
-def draw_winner(text):
-    text = settings.WINNER_FONT.render(text, 1, settings.WHITE)
-    WIN.blit(text, (settings.WIDTH // 2 - text.get_width() //
-                    2, settings.HEIGHT // 2 - text.get_height() // 2))
-    pygame.display.update()
-    pygame.time.delay(5000)
-
-
-def handle_yellow_movement(keys, yellow):
-    if keys[pygame.K_a] and (yellow.x - settings.MOVE_SPEED > 0):  # left
-        yellow.x -= settings.MOVE_SPEED
-
-    if keys[pygame.K_d] and (yellow.x + yellow.width + settings.MOVE_SPEED < BORDER.x):  # right
-        yellow.x += settings.MOVE_SPEED
-
-    if keys[pygame.K_w] and (yellow.y - settings.MOVE_SPEED > 0):  # up
-        yellow.y -= settings.MOVE_SPEED
-
-    if keys[pygame.K_s] and (yellow.y + settings.MOVE_SPEED + yellow.height < settings.HEIGHT):  # down
-        yellow.y += settings.MOVE_SPEED
-
-
 def handle_movement(keys, player, controls):
     xmove = player.get_x() + \
         (keys[controls["right"]] - keys[controls["left"]]) * settings.MOVE_SPEED
@@ -96,16 +111,6 @@ def handle_movement(keys, player, controls):
         (keys[controls["down"]] - keys[controls["up"]]) * settings.MOVE_SPEED
 
     player.move(xmove, ymove)
-
-
-def handle_red_movement(keys, red):
-    xmove = red.get_x() + \
-        (keys[pygame.K_RIGHT] - keys[pygame.K_LEFT]) * settings.MOVE_SPEED
-
-    ymove = red.get_y() + \
-        (keys[pygame.K_DOWN] - keys[pygame.K_UP]) * settings.MOVE_SPEED
-
-    red.move(xmove, ymove)
 
 
 def main():
@@ -150,6 +155,12 @@ def main():
                     red_bullets.append(pygame.Rect(
                         red.get_x(), red.get_y() + red.get_width() // 2 - 2, 10, 5)
                     )
+
+                if event.key == pygame.K_COMMA:
+                    # scale everything up
+                    settings.SCALE = (settings.SCALE % settings.MAXSCALE) + 1
+                    pygame.display.set_mode(
+                        (settings.WIDTH * settings.SCALE, settings.HEIGHT * settings.SCALE))
 
             if event.type == RED_HIT:
                 red_health -= 1

@@ -3,13 +3,17 @@ import os
 pygame.font.init()
 
 # dimensions of objects
-WIDTH, HEIGHT = 900, 500
-BORDER_WIDTH = 10
-SPACESHIP_WIDTH, SPACESHIP_HEIGHT = 55, 40
+WIDTH, HEIGHT = 320, 180
+SCALE = 1
+MAXSCALE = 5
+BORDER_WIDTH = 2
+SPACESHIP_WIDTH, SPACESHIP_HEIGHT = 20, 15
+BULLET_WIDTH, BULLET_HEIGHT = 7, 5
+
 
 # fonts
-HEALTH_FONT = pygame.font.SysFont('comicsans', 40)
-WINNER_FONT = pygame.font.SysFont('comicsans', 100)
+HEALTH_FONT = pygame.font.SysFont('comicsans', 15)
+WINNER_FONT = pygame.font.SysFont('comicsans', 25)
 
 # colours
 WHITE = (255, 255, 255)
@@ -17,8 +21,8 @@ BLACK = (0, 0, 0)
 
 # game settings
 FPS = 60
-MOVE_SPEED = 5
-BULLET_VEL = 7
+MOVE_SPEED = 3
+BULLET_VEL = 5
 AMMO = 5
 
 # controls
