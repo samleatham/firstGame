@@ -2,9 +2,13 @@ import pygame
 import os
 import settings
 from gameObject import GameObj
+from view import GameView
 pygame.mixer.init()
 
-WIN = pygame.display.set_mode((settings.WIDTH, settings.HEIGHT))
+field = pygame.Rect(0, 0, settings.WIDTH, settings.HEIGHT)
+camera = pygame.Rect(0, 0, settings.WIDTH, settings.HEIGHT)
+view = GameView(camera, field, settings.SCALE, settings.MAXSCALE)
+
 pygame.display.set_caption("First Game")
 
 BORDER = pygame.Rect((settings.WIDTH // 2) - (settings.BORDER_WIDTH // 2),
@@ -27,60 +31,35 @@ YELLOW_HIT = pygame.USEREVENT + 1
 RED_HIT = pygame.USEREVENT + 2
 
 
-def image_scale(image, scale):
-    if scale > 1:
-        return pygame.transform.scale(image, (image.get_width() * scale, image.get_height() * scale))
-    else:
-        return image
-
-
-def rect_scale(rect, scale):
-    if scale > 1:
-        x = rect.x * scale
-        y = rect.y * scale
-        width = rect.width * scale
-        height = rect.height * scale
-        return pygame.Rect(x, y, width, height)
-    else:
-        return rect
-
-
 def draw_window(red, yellow, bullets, red_health, yellow_health):
     # draw the background and border
-    WIN.blit(image_scale(SPACE, settings.SCALE), (0, 0))
-    pygame.draw.rect(WIN, settings.BLACK, rect_scale(BORDER, settings.SCALE))
+    view.display_background(SPACE)
+    view.display_rectangle(BORDER, settings.BLACK)
 
+    view.display_object(red)
+    view.display_object(yellow)
     # spaceships
-    WIN.blit(image_scale(red.get_image(), settings.SCALE),
-             (red.get_x() * settings.SCALE, red.get_y() * settings.SCALE)
-             )
-
-    WIN.blit(image_scale(yellow.get_image(), settings.SCALE),
-             (yellow.get_x() * settings.SCALE, yellow.get_y() * settings.SCALE)
-             )
 
     # any bullets
     for bullet in bullets:
-        pygame.draw.rect(WIN, settings.WHITE,
-                         rect_scale(bullet, settings.SCALE)
-                         )
+        view.display_rectangle(bullet, settings.WHITE)
 
     # text
     red_health_text = settings.HEALTH_FONT.render(
         "Health: " + str(red_health), 1, settings.WHITE)
     yellow_health_text = settings.HEALTH_FONT.render(
         "Health: " + str(yellow_health), 1, settings.WHITE)
-    WIN.blit(red_health_text, (WIN.get_width() - red_health_text.get_width() -
-                               10, WIN.get_height() - red_health_text.get_height() - 10))
-    WIN.blit(yellow_health_text, (10, WIN.get_height() -
-                                  yellow_health_text.get_height() - 10))
+    view.get_display().blit(red_health_text, (view.get_window_width() - red_health_text.get_width() -
+                                              10, view.get_window_height() - red_health_text.get_height() - 10))
+    view.get_display().blit(yellow_health_text, (10, view.get_window_height() -
+                                                 yellow_health_text.get_height() - 10))
     pygame.display.update()
 
 
 def draw_winner(text):
     text = settings.WINNER_FONT.render(text, 1, settings.WHITE)
-    WIN.blit(text, (WIN.get_width() // 2 - text.get_width() //
-                    2, WIN.get_height() // 2 - text.get_height() // 2))
+    view.get_display().blit(text, (view.get_window_width() // 2 - text.get_width() //
+                                   2, view.get_window_height() // 2 - text.get_height() // 2))
     pygame.display.update()
     pygame.time.delay(5000)
 
@@ -147,20 +126,20 @@ def main():
                     # make a yellow bullet
                     yellow_bullets.append(pygame.Rect(
                         yellow.get_x() + yellow.get_width(),
-                        yellow.get_y() + yellow.get_height() // 2 - 2, 10, 5)
-                    )
+                        yellow.get_y() + yellow.get_height() // 2 - settings.BULLET_HEIGHT // 2,
+                        settings.BULLET_WIDTH, settings.BULLET_HEIGHT
+                    ))
 
                 if event.key == settings.REDCONTROLS["shoot"] and len(red_bullets) < settings.AMMO:
                     # make a red bullet
                     red_bullets.append(pygame.Rect(
-                        red.get_x(), red.get_y() + red.get_width() // 2 - 2, 10, 5)
-                    )
+                        red.get_x(), red.get_y() + red.get_height() // 2 - settings.BULLET_HEIGHT // 2,
+                        settings.BULLET_WIDTH, settings.BULLET_HEIGHT
+                    ))
 
                 if event.key == pygame.K_COMMA:
                     # scale everything up
-                    settings.SCALE = (settings.SCALE % settings.MAXSCALE) + 1
-                    pygame.display.set_mode(
-                        (settings.WIDTH * settings.SCALE, settings.HEIGHT * settings.SCALE))
+                    view.increaseScale()
 
             if event.type == RED_HIT:
                 red_health -= 1
@@ -170,7 +149,7 @@ def main():
         keys_pressed = pygame.key.get_pressed()
         handle_movement(keys_pressed, yellow, settings.YELLOWCONTROLS)
         handle_movement(keys_pressed, red, settings.REDCONTROLS)
-
+        view.move(view.get_x() + 1, view.get_y())
         handle_bullets(yellow_bullets, red_bullets, yellow, red)
 
         draw_window(red, yellow, red_bullets +

@@ -34,8 +34,11 @@ class GameObj:
         return self.shape.colliderect(other)
 
     def get_image(self):
-        return pygame.transform.scale(pygame.transform.rotate(
-            self.image, self.image_angle), (self.get_width(), self.get_height()))
+        if self.image:
+            return pygame.transform.scale(pygame.transform.rotate(
+                self.image, self.image_angle), (self.get_width(), self.get_height()))
+        else:
+            return 0
 
     def move(self, x, y):
         self.shape.x = bound(x, self.boundaries.x,
